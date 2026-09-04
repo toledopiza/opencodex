@@ -69,6 +69,7 @@ describe("native GPT model toggles (bare slugs in disabledModels)", () => {
     expect(rows.find(r => r.slug === "gpt-5.5")?.disabled).toBe(false);
     // Known context metadata rides along for the dashboard.
     expect(rows.find(r => r.slug === "gpt-5.6-sol")?.contextWindow).toBe(372_000);
+    expect(rows.find(r => r.slug === "gpt-6-astra")?.contextWindow).toBe(272_000);
   });
 
   test("nativeModelRows applies providerContextCaps.openai as a ceiling (#1430)", () => {
@@ -474,9 +475,11 @@ describe("native GPT model toggles (bare slugs in disabledModels)", () => {
     const modelsRes = await handleManagementAPI(
       new Request("http://localhost/api/models"), new URL("http://localhost/api/models"), config,
     );
-    const rows = await modelsRes!.json() as Array<{ namespaced: string; native?: boolean; disabled: boolean }>;
+    const rows = await modelsRes!.json() as Array<{ namespaced: string; native?: boolean; disabled: boolean; reasoningEfforts?: string[] }>;
     const nativeRows = rows.filter(r => r.native);
     expect(nativeRows.map(r => r.namespaced)).toEqual([...NATIVE_OPENAI_MODELS]);
+    expect(nativeRows.find(r => r.namespaced === "gpt-6-astra")?.reasoningEfforts)
+      .toEqual(["low", "medium", "high", "xhigh", "max"]);
     expect(nativeRows.find(r => r.namespaced === "gpt-5.6-sol")?.disabled).toBe(true);
     // Native rows lead the response so the GUI pins the group first.
     expect(rows[0]?.native).toBe(true);

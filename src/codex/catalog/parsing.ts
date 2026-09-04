@@ -250,6 +250,12 @@ export function normalizeServiceTiers(entry: RawEntry): RawEntry {
 }
 
 export function ensureAutoCompactTokenLimit(entry: RawEntry): RawEntry {
+  const nativeSlug = trustedAccountBoundNativeCatalogSlug(entry)
+    ?? (isNativeOpenAiEntry(entry) ? entry.slug as string : undefined);
+  if (nativeSlug === "gpt-6-astra") {
+    entry.auto_compact_token_limit = null;
+    return entry;
+  }
   if (
     typeof entry.context_window === "number"
     && entry.context_window > 0
@@ -376,7 +382,8 @@ export function applyMultiAgentMode(entries: RawEntry[], mode: MultiAgentMode, v
         ? nativeMultiAgentVersion(slug)
         : codexForwardCapabilityAlias
           ? nativeMultiAgentVersion(codexForwardCapabilityAlias)
-          : UPSTREAM_NATIVE_ENTRIES.get(trustedAccountBoundNativeCatalogSlug(entry) ?? slug)?.multi_agent_version;
+          : nativeMultiAgentVersion(slug)
+            ?? UPSTREAM_NATIVE_ENTRIES.get(trustedAccountBoundNativeCatalogSlug(entry) ?? slug)?.multi_agent_version;
       if (typeof upstreamPin === "string") {
         entry.multi_agent_version = upstreamPin;
       } else if (v2FeatureEnabled) {

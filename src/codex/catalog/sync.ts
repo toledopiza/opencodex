@@ -42,7 +42,7 @@ import {
   resetBundledCatalogCacheForTests,
 } from "./bundled";
 import { isMultiAgentV2Enabled } from "../features";
-import { applyCatalogModelMetadata, applyReasoningLevels, catalogEntryEfforts, clampCatalogModelsToCodexSupport, ensureGpt56ReasoningLevels, ensureUltraReasoningLevel, isGpt56NativeSlug } from "./effort";
+import { applyCatalogModelMetadata, applyReasoningLevels, catalogEntryEfforts, clampCatalogModelsToCodexSupport, ensureModernNativeReasoningLevels, ensureUltraReasoningLevel, isModernNativeSlug } from "./effort";
 import {
   clearGatherRoutedModelsInflight,
   filterCatalogVisibleModels,
@@ -198,7 +198,7 @@ export function finishUpstreamNativeEntry(clone: RawEntry, priority: number, con
   // GPT-5.6 natives keep their exact upstream ladders (e.g. luna has max but no ultra).
   // Older natives (gpt-5.5 / 5.4 / 5.4-mini / 5.3-codex-spark) get mock max + ultra
   // (wire-clamped to xhigh). Ultra is always advertised regardless of v2 toggle.
-  if (!isGpt56NativeSlug(String(clone.slug ?? ""))) ensureUltraReasoningLevel(clone);
+  if (!isModernNativeSlug(String(clone.slug ?? ""))) ensureUltraReasoningLevel(clone);
   return ensureStrictCatalogFields(normalizeServiceTiers(clone));
 }
 
@@ -304,12 +304,12 @@ export function deriveEntry(
       if (model?.catalogKind) e.opencodex_catalog_kind = model.catalogKind;
     } else {
       applyNativeOpenAiContextOverride(e, contextCap);
-      if (isGpt56NativeSlug(slug)) ensureGpt56ReasoningLevels(e);
+      if (isModernNativeSlug(slug)) ensureModernNativeReasoningLevels(e);
       else ensureUltraReasoningLevel(e);
-     // Non-5.6 natives (5.5, 5.4, 5.4-mini, spark) do not support responses-lite;
+     // Legacy natives (5.5, 5.4, 5.4-mini, spark) do not support responses-lite;
      // the template may carry the flag from a 5.6 entry — strip it so codex-rs does
      // not inject reasoning.context: "all_turns" for models that reject it.
-     if (!isGpt56NativeSlug(slug)) {
+     if (!isModernNativeSlug(slug)) {
         // Spark NEEDS use_responses_lite: true — it controls the tool delivery format
         // (AdditionalTools in input vs top-level tools). The reasoning params that
         // use_responses_lite triggers (context: "all_turns", summary) are stripped
@@ -344,8 +344,8 @@ export function deriveEntry(
     applyReasoningLevels(entry, model?.reasoningEfforts, model?.defaultReasoningEffort, preserveExact);
   }
   else {
-    applyReasoningLevels(entry, isGpt56NativeSlug(slug) ? undefined : ["low", "medium", "high", "xhigh"]);
-    if (isGpt56NativeSlug(slug)) ensureGpt56ReasoningLevels(entry);
+    applyReasoningLevels(entry, isModernNativeSlug(slug) ? undefined : ["low", "medium", "high", "xhigh"]);
+    if (isModernNativeSlug(slug)) ensureModernNativeReasoningLevels(entry);
   }
   if (model && isRouted) applyCatalogMetadata(entry, model.provider, model.id, model.contextCap);
   applyCatalogModelMetadata(entry, model);
@@ -844,7 +844,7 @@ export function mergeCatalogEntriesFromObservedState({
       const preserved = normalizeServiceTiers({ ...m, priority: nativePriority(slug, m.priority) });
       // Older natives kept from disk still need the mock top tiers (max + ultra always
       // for subagent max spawns; wire-clamped to the model's real top rung).
-      if (!isGpt56NativeSlug(slug)) ensureUltraReasoningLevel(preserved);
+      if (!isModernNativeSlug(slug)) ensureUltraReasoningLevel(preserved);
       return preserved;
     })
     : [];

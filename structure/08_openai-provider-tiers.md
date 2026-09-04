@@ -109,14 +109,14 @@ preserving a stale one would block every later migration.
 
 - `openai` exposes one group of bare native Codex ids in Pool and Direct. Changing mode does not
   change catalog, selected, requested, or wire model identity.
-- `openai-apikey` exposes namespaced API rows. Its trusted catalog contains `gpt-5.5`, `gpt-5.6`,
+- `openai-apikey` exposes namespaced API rows. Its trusted catalog contains `gpt-6-astra`, `gpt-5.5`, `gpt-5.6`,
   Sol/Terra/Luna, and the three corresponding Pro variants. No generic `gpt-5.6-pro` alias exists.
 - The selector-qualified account-native `*/gpt-daybreak-blue-latest` and API-key
   `daybreak-blue-latest` are distinct wire surfaces. An observed native row follows the pinned Sol
   capability metadata, but routing strips only the account selector and keeps
   `gpt-daybreak-blue-latest` byte-for-byte; it never expands the bare list or substitutes Sol.
-- API GPT-5.6 rows use 1,050,000 context tokens and 922,000 max input tokens. Codex-login rows keep
-  the native 372,000-token contract.
+- API GPT-6 Astra and GPT-5.6 rows use 1,050,000 context tokens and 922,000 max input tokens.
+  Codex-login Astra uses 272,000 effective / 872,000 maximum context; GPT-5.6 uses 372,000.
 - `*-pro` selected ids rewrite to the base wire id with `reasoning.mode: "pro"`; request logs,
   usage, model visibility, subagent state, and injection state retain the selected virtual id.
 - Compact preserves provider/selected identity but sends the base model without a reasoning object.

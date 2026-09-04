@@ -62,10 +62,10 @@ silmeden veya tam `<seçici>/<yerel-openai-modeli>` yönlendirmesini devre dış
 bırakmadan oluşturulan nitelikli satırları gizlemek ve seçicideki yalın yerel
 satırları geri yüklemek için `false` olarak ayarlayın.
 
-API GPT-5.6 ve Daybreak girdileri 1.050.000 bağlam / 922.000 maksimum girdi
+API GPT-6 Astra, GPT-5.6 ve Daybreak girdileri 1.050.000 bağlam / 922.000 maksimum girdi
 kullanır ve `*-pro` seçici kimlikleri, günlükler, kullanım ve seçici durumu
 sanal kimliği korurken `reasoning.mode: "pro"` ile temel hat modeline
-çözümlenir. API kataloğu tam olarak on kimliğe sabitlenmiştir: `gpt-5.5`,
+çözümlenir. API kataloğu tam olarak on bir kimliğe sabitlenmiştir: `gpt-6-astra`, `gpt-5.5`,
 `gpt-5.6`, Sol/Terra/Luna, bunların üç Pro sanal kimliği, `daybreak-red-latest`
 ve `daybreak-blue-latest`; genel bir `gpt-5.6-pro` takma adı yoktur. Sıkıştırma
 istekleri seçilen katmanı korur ancak bir akıl yürütme nesnesi olmadan temel
@@ -156,7 +156,7 @@ meta verileri sağladığı GPT-5.6 için kullanılır.
 | Codex girişi (hesap nitelikli satırlar devre dışı) | `gpt-5.6-sol`, `gpt-5.6-terra` ve `gpt-5.6-luna` gibi yalın yerel kimlikler; Pool veya Direct `codexAccountMode` aracılığıyla seçilir. GPT-5.6 satırları 372.000 tokenlik bir katalog penceresi kullanır. |
 | Codex girişi (uygun seçicilerle hesap nitelikli satırlar etkin) | Uygun seçici ve desteklenen yerel model başına bir `<seçici>/<yerel-openai-modeli>` satırı; her satır yalnızca eşlenen hesabını kullanır ve yalın yerel satırlar seçiciden gizlenir. Yerel meta veriler ve bağlam pencereleri korunur. |
 | Codex girişi (açık Daybreak iletme satırı) | Yalnızca tam `customModels` satırı kurallı `openai` sağlayıcısında yapılandırıldığında `openai/gpt-daybreak-blue-latest`. Daybreak hat kimliğini korur ve sabitlenmiş Sol yetenek anlık görüntüsünü kullanır (372.000 bağlam; 334.800 otomatik sıkıştırma). |
-| OpenAI (API anahtarı) | Tam olarak on ad alanlı satır: `gpt-5.5`, `gpt-5.6`, Sol/Terra/Luna, üç `*-pro` sanal kimliği ve iki Daybreak takma adı (onunun tümü için 1.050.000 bağlam; 922.000 maksimum girdi) |
+| OpenAI (API anahtarı) | Tam olarak on bir ad alanlı satır: `gpt-6-astra`, `gpt-5.5`, `gpt-5.6`, Sol/Terra/Luna, üç `*-pro` sanal kimliği ve iki Daybreak takma adı (tümü için 1.050.000 bağlam; 922.000 maksimum girdi) |
 | OpenRouter | `openrouter/openai/gpt-5.6-sol`, `openrouter/openai/gpt-5.6-terra`, `openrouter/openai/gpt-5.6-luna` (1.050.000) |
 | Cursor | Statik geri dönüş `cursor/gpt-5.6-sol`, `cursor/gpt-5.6-terra` ve `cursor/gpt-5.6-luna` (1.000.000) artı `cursor/grok-4.5` ve `cursor/grok-4.5-fast` (500.000) içerir; canlı hesap keşfi hangilerinin görünür kalacağına karar verir. |
 | xAI | Canlı keşif yetkilidir. Geri dönüş kataloğu `xai/grok-4.6` içerir ve varsayılan olarak `xai/grok-4.5`'tir; her ikisinin de 500.000 tokenlik pencereleri vardır. Grok 4.6, `low` / `medium` / `high` / `xhigh` (yukarı akış varsayılanı: `high`) sunarken, Grok 4.5 `high` ile durur. |
@@ -294,5 +294,3 @@ ocx sync
 opencodex, katalog görünürlüğü, önceliği veya meta verileri her değiştiğinde
 `models_cache.json` dosyasını kasıtlı olarak eski bir önbellek sarmalayıcısıyla
 yeniden yazar, böylece bir sonraki Codex model yenilemesi yeni kataloğu okur.
-
-

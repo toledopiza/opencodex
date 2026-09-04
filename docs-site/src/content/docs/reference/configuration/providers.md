@@ -53,7 +53,7 @@ selector instead of allocating a new one.
 `openai` and `openai-apikey` are fixed reserved ids. `openai.codexAccountMode` is `"pool"` by default
 and selects across the main plus added accounts; `"direct"` uses only the current caller/main login.
 API uses only its configured API key or key pool. Use a bare model or `openai-apikey/<model>`; there
-is no cross-route credential fallback. API GPT-5.6 rows carry 1,050,000 context / 922,000 max input
+is no cross-route credential fallback. API GPT-6 Astra and GPT-5.6 rows carry 1,050,000 context / 922,000 max input
 metadata, and Pro virtual ids rewrite to the base wire model with `reasoning.mode: "pro"`.
 
 `openaiProviderTierVersion: 2` marks the current single-provider projection. Before migrating a
@@ -367,8 +367,8 @@ silently replaced or truncated.
 Use `selectedModels` when discovery should still run but only selected ids should appear in Codex and
 `/v1/models`. The dashboard retains the full discovered list for later allowlist changes.
 
-Preview GPT-5.6 fallback entries use the same mechanism. The OpenAI API-key preset seeds base and Pro
-ids with context `1050000` and max input `922000`; OpenRouter seeds `openai/gpt-5.6-sol`,
+Preview GPT-6 Astra and GPT-5.6 fallback entries use the same mechanism. The OpenAI API-key preset
+seeds Astra, base, and Pro ids with context `1050000` and max input `922000`; OpenRouter seeds `openai/gpt-5.6-sol`,
 `openai/gpt-5.6-terra`, and `openai/gpt-5.6-luna` with context `1050000`. Pool/Direct advertises
 `372000`; the synced catalog advertises `max` while keeping `xhigh` distinct.
 

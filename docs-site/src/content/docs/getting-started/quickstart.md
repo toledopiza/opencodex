@@ -25,12 +25,12 @@ ocx init
 
 The result is saved to `$OPENCODEX_HOME/config.json` (default `~/.opencodex/config.json`).
 
-:::note[GPT-5.6 rollout entries]
-The current stable release seeds GPT-5.6 Sol/Terra/Luna for ChatGPT passthrough, OpenAI API-key,
-OpenRouter, and
+:::note[Current OpenAI rollout entries]
+The current release seeds GPT-6 Astra and GPT-5.6 Sol/Terra/Luna for ChatGPT passthrough, and seeds
+Astra plus GPT-5.6 for OpenAI API-key. GPT-5.6 is also seeded for OpenRouter and
 the experimental Cursor adapter. They work only when that upstream account has access. The OpenAI
-API-key and OpenRouter presets advertise a 372,000-token usable context window; Cursor keeps its own
-adapter metadata.
+API-key preset advertises 1,050,000 context / 922,000 max input for Astra and GPT-5.6; native Astra
+uses 272,000 effective / 872,000 maximum context. Cursor keeps its own adapter metadata.
 :::
 
 ## 2. Start the proxy

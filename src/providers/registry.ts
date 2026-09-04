@@ -327,14 +327,15 @@ const MINIMAX_M3_REASONING_EFFORT_MAP: Record<string, string> = {
   max: "adaptive",
 };
 const OPENAI_GPT56_MODELS = ["gpt-5.6", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"];
+const OPENAI_GPT6_MODELS = ["gpt-6-astra"];
 const OPENAI_GPT56_PRO_MODELS = ["gpt-5.6-sol-pro", "gpt-5.6-terra-pro", "gpt-5.6-luna-pro"];
 const OPENAI_API_GPT56_CONTEXT_WINDOW = 1_050_000;
 const OPENAI_API_GPT56_CONTEXT_WINDOWS: Record<string, number> = {
-  ...Object.fromEntries([...OPENAI_GPT56_MODELS, ...OPENAI_GPT56_PRO_MODELS].map(id => [id, OPENAI_API_GPT56_CONTEXT_WINDOW])),
+  ...Object.fromEntries([...OPENAI_GPT6_MODELS, ...OPENAI_GPT56_MODELS, ...OPENAI_GPT56_PRO_MODELS].map(id => [id, OPENAI_API_GPT56_CONTEXT_WINDOW])),
   "gpt-5.5": OPENAI_API_GPT56_CONTEXT_WINDOW,
 };
 const OPENAI_API_GPT56_MAX_INPUT_TOKENS: Record<string, number> = {
-  ...Object.fromEntries([...OPENAI_GPT56_MODELS, ...OPENAI_GPT56_PRO_MODELS].map(id => [id, 922_000])),
+  ...Object.fromEntries([...OPENAI_GPT6_MODELS, ...OPENAI_GPT56_MODELS, ...OPENAI_GPT56_PRO_MODELS].map(id => [id, 922_000])),
   "gpt-5.5": 922_000,
 };
 const OPENAI_API_GPT56_VIRTUAL_MODELS: Record<string, { wireModelId: string; reasoningMode: "pro" }> = {
@@ -1188,17 +1189,17 @@ export const PROVIDER_REGISTRY: readonly ProviderRegistryEntry[] = [
     featured: true,
     dashboardUrl: "https://platform.openai.com/api-keys",
     defaultModel: "gpt-5.5",
-    models: ["gpt-5.5", ...OPENAI_GPT56_MODELS, ...OPENAI_GPT56_PRO_MODELS, ...OPENAI_DAYBREAK_MODELS],
+    models: [...OPENAI_GPT6_MODELS, "gpt-5.5", ...OPENAI_GPT56_MODELS, ...OPENAI_GPT56_PRO_MODELS, ...OPENAI_DAYBREAK_MODELS],
     liveModels: true,
     modelContextWindows: { ...OPENAI_API_GPT56_CONTEXT_WINDOWS, ...OPENAI_DAYBREAK_CONTEXT_WINDOWS },
     modelMaxInputTokens: { ...OPENAI_API_GPT56_MAX_INPUT_TOKENS, ...OPENAI_DAYBREAK_MAX_INPUT_TOKENS },
     modelInputModalities: Object.fromEntries(
-      ["gpt-5.5", ...OPENAI_GPT56_MODELS, ...OPENAI_GPT56_PRO_MODELS, ...OPENAI_DAYBREAK_MODELS]
+      [...OPENAI_GPT6_MODELS, "gpt-5.5", ...OPENAI_GPT56_MODELS, ...OPENAI_GPT56_PRO_MODELS, ...OPENAI_DAYBREAK_MODELS]
         .map(id => [id, ["text", "image"]]),
     ),
     modelReasoningEfforts: {
       ...Object.fromEntries(
-        [...OPENAI_GPT56_MODELS, ...OPENAI_GPT56_PRO_MODELS].map(id => [id, OPENAI_API_GPT56_REASONING_EFFORTS]),
+        [...OPENAI_GPT6_MODELS, ...OPENAI_GPT56_MODELS, ...OPENAI_GPT56_PRO_MODELS].map(id => [id, OPENAI_API_GPT56_REASONING_EFFORTS]),
       ),
       ...OPENAI_DAYBREAK_REASONING_EFFORTS,
     },

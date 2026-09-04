@@ -2353,6 +2353,30 @@ describe("Codex catalog routed normalization", () => {
     ]);
   });
 
+  test("native GPT-6 Astra keeps its current Codex context and reasoning contract", () => {
+    const astra = buildCatalogEntries({
+      ...nativeTemplate(),
+      slug: "gpt-6-astra",
+      default_reasoning_level: "low",
+      supported_reasoning_levels: ["low", "medium", "high", "xhigh", "max", "ultra"]
+        .map(effort => ({ effort, description: `${effort} reasoning` })),
+      use_responses_lite: true,
+      tool_mode: "code_mode_only",
+      multi_agent_version: "v2",
+      auto_compact_token_limit: null,
+    }, ["gpt-6-astra"], [])[0];
+    expect(astra).toMatchObject({
+      slug: "gpt-6-astra",
+      context_window: 272_000,
+      max_context_window: 872_000,
+      auto_compact_token_limit: null,
+      default_reasoning_level: "low",
+      multi_agent_version: "v2",
+    });
+    expect((astra?.supported_reasoning_levels as { effort: string }[]).map(level => level.effort))
+      .toEqual(["low", "medium", "high", "xhigh", "max", "ultra"]);
+  });
+
   test("gpt-5.6 natives come from the pinned upstream snapshot (PR #31684) with exact per-slug specs", () => {
     const entries = buildCatalogEntries(nativeTemplate(), ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"], []);
     const sol = entries.find(e => e.slug === "gpt-5.6-sol");
@@ -4711,12 +4735,12 @@ describe("Codex catalog routed normalization", () => {
 
 describe("OpenAI API trusted catalog augmentation", () => {
   const exactIds = [
-    "gpt-5.5", "gpt-5.6", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna",
+    "gpt-6-astra", "gpt-5.5", "gpt-5.6", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna",
     "gpt-5.6-sol-pro", "gpt-5.6-terra-pro", "gpt-5.6-luna-pro",
     "daybreak-red-latest", "daybreak-blue-latest",
   ];
 
-  test("rebuilds the exact eight rows after partial/conflicting successful discovery", () => {
+  test("rebuilds the exact registered rows after partial/conflicting successful discovery", () => {
     const rows = augmentRoutedModelsWithRegistryOpenAiApiRows([
       { provider: "openai-apikey", id: "gpt-5.6-sol", contextWindow: 1, maxInputTokens: 1, inputModalities: ["text"], reasoningEfforts: ["low"], owned_by: "live" },
       { provider: "openai-apikey", id: "unrelated-live-model", contextWindow: 999 },
@@ -4764,6 +4788,12 @@ describe("OpenAI API trusted catalog augmentation", () => {
           reasoningEfforts: ["low", "medium", "high", "xhigh", "max"],
         });
       }
+      expect(apiRows.find(row => row.id === "gpt-6-astra")).toMatchObject({
+        contextWindow: 1_050_000,
+        maxInputTokens: 922_000,
+        inputModalities: ["text", "image"],
+        reasoningEfforts: ["low", "medium", "high", "xhigh", "max"],
+      });
       // Daybreak aliases carry their own metadata and, deliberately, NO effort ladder.
       // They fall outside the gpt-5.6 loop above because the alias id is the registered
       // name — the snapshot id is never registered.

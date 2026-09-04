@@ -55,11 +55,11 @@ export function nativeEffortClamp(slug: string, effort: string | undefined): str
     ? entry.supported_reasoning_levels as Array<{ effort?: string }>
     : [];
   if (levels.length === 0) {
-    // Not snapshot-covered. gpt-5.6 natives have a REAL max rung (ensureGpt56ReasoningLevels
+    // Not snapshot-covered. Modern natives have a REAL max rung (ensureModernNativeReasoningLevels
     // restores it even off-snapshot) -> never clamp. Every other bare native (gpt-5.5/5.4/
     // 5.4-mini/5.3-codex-spark and future old-ladder slugs) really stops at xhigh — the
     // ChatGPT backend error names exactly none..xhigh — so clamp the synthetic top tier.
-    return isGpt56NativeSlug(slug) ? null : "xhigh";
+    return isModernNativeSlug(slug) ? null : "xhigh";
   }
   const supported = levels.flatMap(l => typeof l.effort === "string" ? [l.effort] : []);
   if (supported.includes(effort)) return null;
@@ -180,11 +180,13 @@ export function applyReasoningLevels(
     : efforts.includes("medium") ? "medium" : efforts.includes("high") ? "high" : efforts[0];
 }
 
-export function isGpt56NativeSlug(slug: string): boolean {
-  return !slug.includes("/") && nativeOpenAiCapabilitySourceSlug(slug).startsWith("gpt-5.6-");
+export function isModernNativeSlug(slug: string): boolean {
+  if (slug.includes("/")) return false;
+  const source = nativeOpenAiCapabilitySourceSlug(slug);
+  return source === "gpt-6-astra" || source.startsWith("gpt-5.6-");
 }
 
-export function ensureGpt56ReasoningLevels(entry: RawEntry): void {
+export function ensureModernNativeReasoningLevels(entry: RawEntry): void {
   const levels = Array.isArray(entry.supported_reasoning_levels)
     ? entry.supported_reasoning_levels as Array<{ effort?: string }>
     : [];

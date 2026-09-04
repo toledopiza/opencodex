@@ -52,10 +52,10 @@ backward compatibility. Set it to `false` to hide generated qualified rows and r
 rows in the picker without deleting mappings or disabling exact
 `<selector>/<native-openai-model>` routing.
 
-API GPT-5.6 and Daybreak entries use
+API GPT-6 Astra, GPT-5.6, and Daybreak entries use
 1,050,000 context / 922,000 max input, and `*-pro` picker ids resolve to the base wire model with
 `reasoning.mode: "pro"` while logs, usage, and picker state keep the virtual id.
-The API catalog is fixed to exactly ten ids: `gpt-5.5`, `gpt-5.6`, Sol/Terra/Luna, their three Pro
+The API catalog is fixed to exactly eleven ids: `gpt-6-astra`, `gpt-5.5`, `gpt-5.6`, Sol/Terra/Luna, their three Pro
 virtual ids, `daybreak-red-latest`, and `daybreak-blue-latest`; there is no generic
 `gpt-5.6-pro` alias.
 Compact requests keep the selected tier but send the base model without a reasoning object.
@@ -64,6 +64,8 @@ Select the credential route represented by the picker id. Change Pool/Direct on 
 `<selector>` below is a user-chosen public label mapped through `codexAccountNamespaces`:
 
 ```text
+gpt-6-astra                         # bare Codex-login route via Pool or Direct
+openai-apikey/gpt-6-astra           # API key
 gpt-5.6-sol                         # bare Codex-login route via Pool or Direct
 <selector>/gpt-5.6-sol              # stored Codex account mapped by that selector
 openai-apikey/gpt-5.6-sol           # API key
@@ -119,7 +121,7 @@ including OpenAI service-tier metadata.
 
 ## Current stable model coverage
 
-The native fallback set includes `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`,
+The native fallback set includes `gpt-6-astra`, `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`,
 `gpt-5.3-codex-spark`, and GPT-5.6 Sol/Terra/Luna. For the GPT-5.5/5.4 family, opencodex preserves
 the installed Codex catalog's richer live entries and only synthesizes a missing entry. The bundled
 upstream snapshot is used only for GPT-5.6, where it supplies the real per-model identity and
@@ -127,16 +129,18 @@ metadata instead of an older-template approximation.
 
 | Route | Picker ids and catalog metadata |
 | --- | --- |
-| Codex login (account-qualified rows disabled) | Bare native ids such as `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna`; Pool or Direct is selected through `codexAccountMode`. GPT-5.6 rows use a 372,000-token catalog window. |
+| Codex login (account-qualified rows disabled) | Bare native ids such as `gpt-6-astra`, `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna`; Pool or Direct is selected through `codexAccountMode`. Astra uses a 272,000-token effective context window and 872,000-token maximum; GPT-5.6 rows use 372,000. |
 | Codex login (account-qualified rows enabled with eligible selectors) | One `<selector>/<native-openai-model>` row per eligible selector and supported native model; each row uses only its mapped account, and bare native rows are hidden from the picker. Native metadata and context windows are preserved. |
 | Codex login (explicit Daybreak forward row) | `openai/gpt-daybreak-blue-latest` only when the exact `customModels` row is configured on the canonical `openai` provider. It keeps the Daybreak wire id and uses the pinned Sol capability snapshot (372,000 context; 334,800 automatic compaction). |
-| OpenAI (API key) | Exactly ten namespaced rows: `gpt-5.5`, `gpt-5.6`, Sol/Terra/Luna, the three `*-pro` virtual ids, and the two Daybreak aliases (1,050,000 context; 922,000 max input for all ten) |
+| OpenAI (API key) | Exactly eleven namespaced rows: `gpt-6-astra`, `gpt-5.5`, `gpt-5.6`, Sol/Terra/Luna, the three `*-pro` virtual ids, and the two Daybreak aliases (1,050,000 context; 922,000 max input for all eleven) |
 | OpenRouter | `openrouter/openai/gpt-5.6-sol`, `openrouter/openai/gpt-5.6-terra`, `openrouter/openai/gpt-5.6-luna` (1,050,000) |
 | Cursor | Static fallback includes `cursor/gpt-5.6-sol`, `cursor/gpt-5.6-terra`, and `cursor/gpt-5.6-luna` (1,000,000), plus regular/Fast rows for Grok 4.5 and 4.6 (500,000); 4.6 adds `xhigh`, and live account discovery decides which rows remain visible. |
 | xAI | Live discovery is authoritative. The fallback catalog includes `xai/grok-4.6` and defaults to `xai/grok-4.5`; both have 500,000-token windows. Grok 4.6 exposes `low` / `medium` / `high` / `xhigh` (upstream default: `high`), while Grok 4.5 stops at `high`. |
 
 The pinned GPT-5.6 entries preserve the exact upstream ladder. Sol and Terra expose `low` through
 `ultra`; Luna stops at `max`. Sol defaults to `low`, while Terra and Luna default to `medium`.
+GPT-6 Astra exposes `low` through `ultra`, defaults to `low`, uses the v2 multi-agent surface, and
+leaves automatic compaction unset to match the installed Codex contract.
 The explicit Codex-forward Daybreak Blue row inherits Sol's ladder and default without changing its
 wire identity.
 `ultra` is a client-facing choice for maximum reasoning plus proactive delegation and reaches the
@@ -179,7 +183,7 @@ fallback, and encrypted-task behavior.
 Reasoning-tier visibility is independent of the v1/base/v2 surface mode. Generated reasoning-capable
 entries advertise `max` so direct sub-agent effort overrides validate; current generated routed
 entries and older native GPT entries also advertise `ultra`. Exact upstream GPT-5.6 ladders are
-preserved, so Luna has `max` but no `ultra`.
+preserved, so Luna has `max` but no `ultra`; Astra has real `max` and `ultra` rungs.
 
 On the wire, routed adapters map or clamp unsupported tiers. For older native models whose real
 ladder stops at `xhigh`, `nativeEffortClamp` maps a direct `max` or an `ultra` selection to `xhigh`
