@@ -481,11 +481,12 @@ export function previewArchivedCleanup(
   codexHome: string = resolveCodexHomeDir(),
 ): CleanupPreview {
   const all = listArchivedCandidates(codexHome);
-  const safe = selectOldestPercentSkippingPendingRestore(
+  const selected = selectOldestPercentSkippingPendingRestore(
     filterCandidatesExcludingPinned(all, codexHome),
     percent,
     codexHome,
   );
+  const safe = filterCandidatesExcludingReferencedHistory(selected, codexHome);
   const pct = clampPercent(percent);
   return {
     codexHome,
@@ -502,8 +503,11 @@ export function previewExactArchivedCleanup(
   candidates: ArchivedCandidate[],
   codexHome: string = resolveCodexHomeDir(),
 ): CleanupPreview {
-  const safe = filterCandidatesExcludingPinned(
-    filterCandidatesExcludingPendingRestore(candidates, codexHome),
+  const safe = filterCandidatesExcludingReferencedHistory(
+    filterCandidatesExcludingPinned(
+      filterCandidatesExcludingPendingRestore(candidates, codexHome),
+      codexHome,
+    ),
     codexHome,
   );
   return {
@@ -704,6 +708,76 @@ function findReferencedHistory(
   }
 
   return false;
+}
+
+/**
+ * Advisory preview filter for history that the locked delete path would reject.
+ * Database failures leave candidates unchanged so execution still fails closed.
+ */
+export function filterCandidatesExcludingReferencedHistory(
+  candidates: ArchivedCandidate[],
+  codexHome: string,
+): ArchivedCandidate[] {
+  const statePath = discoverRuntimeDbPaths(codexHome).state;
+  if (!statePath || !existsSync(statePath) || candidates.length === 0) return candidates;
+  let db: Database | undefined;
+  try {
+    db = new Database(statePath, { readonly: true });
+    const threads = loadMatchingThreads(db, candidates, codexHome);
+    if (threads.length === 0) return candidates;
+
+    const blocked = new Set(
+      threads
+        .filter(thread => (thread.history_mode ?? "").toLowerCase() === "paginated")
+        .map(thread => thread.id),
+    );
+    let changed = true;
+    while (changed) {
+      changed = false;
+      const safeIds = new Set(threads.map(thread => thread.id).filter(id => !blocked.has(id)));
+
+      if (tableExists(db, "thread_spawn_edges")) {
+        const edges = db.query<{ parent_thread_id: string; child_thread_id: string }, []>(
+          "SELECT parent_thread_id, child_thread_id FROM thread_spawn_edges",
+        ).all();
+        for (const edge of edges) {
+          for (const id of [edge.parent_thread_id, edge.child_thread_id]) {
+            if (safeIds.has(id) && (!safeIds.has(edge.parent_thread_id) || !safeIds.has(edge.child_thread_id))) {
+              blocked.add(id);
+              changed = true;
+            }
+          }
+        }
+      }
+
+      for (const column of ["forked_from_id", "parent_thread_id", "source_thread_id"] as const) {
+        if (!columnExists(db, "threads", column)) continue;
+        const refs = db.query<{ id: string; target_id: string | null }, []>(
+          `SELECT id, ${column} AS target_id FROM threads WHERE ${column} IS NOT NULL`,
+        ).all();
+        for (const ref of refs) {
+          if (ref.target_id && safeIds.has(ref.target_id) && !safeIds.has(ref.id)) {
+            blocked.add(ref.target_id);
+            changed = true;
+          }
+        }
+      }
+    }
+
+    const blockedPaths = new Set(
+      threads
+        .filter(thread => blocked.has(thread.id))
+        .map(thread => normalizeArchivedRolloutPath(thread.rollout_path, codexHome))
+        .filter((path): path is string => path !== null),
+    );
+    return blockedPaths.size === 0
+      ? candidates
+      : candidates.filter(candidate => !blockedPaths.has(candidate.relPath));
+  } catch {
+    return candidates;
+  } finally {
+    try { db?.close(); } catch { /* */ }
+  }
 }
 
 function tableExists(db: Database, name: string): boolean {

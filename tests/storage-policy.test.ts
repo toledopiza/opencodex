@@ -282,6 +282,39 @@ describe("selection helpers", () => {
     expect(preview.bytes).toBe(50);
   });
 
+  test("selectPolicyPreview skips referenced archives for both targets", () => {
+    const dir = seedHome([
+      { name: "rollout-old.jsonl", bytes: 100, when: OLD },
+      { name: "rollout-mid.jsonl", bytes: 100, when: MID },
+      { name: "rollout-new.jsonl", bytes: 100, when: NEW },
+    ]);
+    const db = new Database(join(dir, "state_5.sqlite"));
+    db.exec("CREATE TABLE thread_spawn_edges (parent_thread_id TEXT, child_thread_id TEXT)");
+    db.exec("INSERT INTO thread_spawn_edges VALUES ('rollout-old.jsonl','active')");
+    db.close();
+
+    const percent = selectPolicyPreview(
+      policy({
+        enabled: true,
+        trigger: { archivedBytesOver: 0 },
+        target: { removeOldestPercent: 67 },
+      }),
+      dir,
+    );
+    expect(percent.count).toBe(1);
+    expect(percent.bytes).toBe(100);
+
+    const reduce = selectPolicyPreview(
+      policy({
+        enabled: true,
+        trigger: { archivedBytesOver: 0 },
+        target: { reduceToBytes: 100 },
+      }),
+      dir,
+    );
+    expect(reduce.candidateRelPaths).toEqual(["archived_sessions/rollout-mid.jsonl"]);
+  });
+
   test("selectPolicyPreview honors reduceToBytes via oldest files", () => {
     const dir = seedHome([
       { name: "rollout-old.jsonl", bytes: 100, when: OLD },

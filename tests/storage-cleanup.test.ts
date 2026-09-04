@@ -585,8 +585,23 @@ describe("executeArchivedCleanup", () => {
 
   test("rejects candidates still referenced by a live spawn edge", () => {
     home = buildHome({ withSpawnEdges: true });
-    // Edge told→tmid; deleting only oldest (told) leaves tmid outside the set.
-    const result = runWithDigest(34, "quarantine", home);
+    const db = new Database(join(home, "state_5.sqlite"));
+    db.exec("DELETE FROM thread_spawn_edges");
+    db.close();
+    const preview = previewArchivedCleanup(34, home);
+    const result = executeArchivedCleanup({
+      percent: 34,
+      mode: "quarantine",
+      digest: preview.digest,
+      codexHome: home,
+      _test: {
+        beforeReconcileLock: () => {
+          const raced = new Database(join(home, "state_5.sqlite"));
+          raced.exec("INSERT INTO thread_spawn_edges VALUES ('told','tmid','active')");
+          raced.close();
+        },
+      },
+    });
     expect(result.ok).toBe(false);
     expect(result.error).toBe("referenced_history");
     expect(existsSync(join(home, "archived_sessions", "rollout-old.jsonl"))).toBe(true);
@@ -594,12 +609,57 @@ describe("executeArchivedCleanup", () => {
 
   test("rejects paginated history_mode threads", () => {
     home = buildHome();
-    const db = new Database(join(home, "state_5.sqlite"));
-    db.exec(`UPDATE threads SET history_mode='paginated' WHERE id='told'`);
-    db.close();
-    const result = runWithDigest(50, "quarantine", home);
+    const preview = previewArchivedCleanup(50, home);
+    const result = executeArchivedCleanup({
+      percent: 50,
+      mode: "quarantine",
+      digest: preview.digest,
+      codexHome: home,
+      _test: {
+        beforeReconcileLock: () => {
+          const db = new Database(join(home, "state_5.sqlite"));
+          db.exec(`UPDATE threads SET history_mode='paginated' WHERE id='told'`);
+          db.close();
+        },
+      },
+    });
     expect(result.ok).toBe(false);
     expect(result.error).toBe("referenced_history");
+  });
+
+  test("preview skips referenced archives and keeps unreferenced candidates", () => {
+    home = buildHome({ withSpawnEdges: true });
+    const db = new Database(join(home, "state_5.sqlite"));
+    db.exec("DELETE FROM thread_spawn_edges");
+    db.exec("INSERT INTO thread_spawn_edges VALUES ('told','active','active')");
+    db.close();
+
+    const preview = previewArchivedCleanup(67, home);
+    expect(preview.candidates.map(candidate => candidate.relPath)).toEqual([
+      "archived_sessions/rollout-mid.jsonl",
+    ]);
+
+    const result = executeArchivedCleanup({
+      percent: 67,
+      mode: "permanent",
+      digest: preview.digest,
+      codexHome: home,
+    });
+    expect(result.ok).toBe(true);
+    expect(existsSync(join(home, "archived_sessions", "rollout-old.jsonl"))).toBe(true);
+    expect(existsSync(join(home, "archived_sessions", "rollout-mid.jsonl"))).toBe(false);
+  });
+
+  test("preview skips paginated archives", () => {
+    home = buildHome();
+    const db = new Database(join(home, "state_5.sqlite"));
+    db.exec("UPDATE threads SET history_mode='paginated' WHERE id='told'");
+    db.close();
+
+    const preview = previewArchivedCleanup(67, home);
+    expect(preview.candidates.map(candidate => candidate.relPath)).toEqual([
+      "archived_sessions/rollout-mid.jsonl",
+    ]);
   });
 
   test("quarantine removes both plain and compressed physical files", () => {

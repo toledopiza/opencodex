@@ -146,6 +146,8 @@ use `ssh -g -L`, broad container publishing, or forwarding modes that expose the
 or `manual` after archived bytes exceed `trigger.archivedBytesOver`. It selects oldest archives toward
 either `target.reduceToBytes` or `target.removeOldestPercent`. `mode` defaults to `quarantine`; use
 `permanent` only as an explicit destructive choice. The policy persists `lastRun` and `nextRun`.
+Archives still referenced by fork, subagent, or paginated history are skipped. The locked delete path
+rechecks references before mutation, so a concurrent history change aborts safely.
 Configure it on the Storage page or with `GET`/`PUT /api/storage/cleanup-policy`; trigger a manual run
 with `POST /api/storage/cleanup-policy/run`.
 

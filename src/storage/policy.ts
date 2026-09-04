@@ -14,6 +14,7 @@ import {
   computePreviewDigest,
   executeArchivedCleanup,
   filterCandidatesExcludingPinned,
+  filterCandidatesExcludingReferencedHistory,
   listArchivedCandidates,
   previewExactArchivedCleanup,
   selectOldestPercentSkippingPendingRestore,
@@ -371,12 +372,13 @@ export function selectPolicyPreview(
     percent,
     codexHome,
   );
+  const safe = filterCandidatesExcludingReferencedHistory(selected, codexHome);
   return {
     archivedBytes,
     percent,
-    count: selected.length,
-    bytes: selected.reduce((sum, c) => sum + c.bytes, 0),
-    digest: computePreviewDigest(selected, percent),
+    count: safe.length,
+    bytes: safe.reduce((sum, c) => sum + c.bytes, 0),
+    digest: computePreviewDigest(safe, percent),
   };
 }
 
