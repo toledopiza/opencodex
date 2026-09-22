@@ -109,7 +109,7 @@ preserving a stale one would block every later migration.
 
 - `openai` exposes one group of bare native Codex ids in Pool and Direct. Changing mode does not
   change catalog, selected, requested, or wire model identity.
-- `openai-apikey` exposes namespaced API rows. Its trusted catalog contains `gpt-6-astra`, `gpt-5.5`, `gpt-5.6`,
+- `openai-apikey` exposes namespaced API rows. Its trusted catalog contains `gpt-6-astra`, `gpt-6-sol`, `gpt-6-luna`, `gpt-5.5`, `gpt-5.6`,
   Sol/Terra/Luna, and the three corresponding Pro variants. No generic `gpt-5.6-pro` alias exists.
 - The selector-qualified account-native `*/gpt-daybreak-blue-latest` and API-key
   `daybreak-blue-latest` are distinct wire surfaces. An observed native row follows the pinned Sol
