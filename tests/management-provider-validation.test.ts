@@ -1340,7 +1340,7 @@ describe("provider management validation", () => {
     }
   });
 
-  test("provider PATCH persists and clears structured-output model opt-outs", async () => {
+  test.each(["noStructuredOutputModels", "noToolModels"] as const)("provider PATCH persists and clears %s", async (field) => {
     if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true });
     mkdirSync(TEST_DIR, { recursive: true });
     process.env.OPENCODEX_HOME = TEST_DIR;
@@ -1366,7 +1366,7 @@ describe("provider management validation", () => {
       const invalid = await fetch(new URL("/api/providers?name=structured-output-toggle", server.url), {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ noStructuredOutputModels: "deepseek-v4-flash" }),
+        body: JSON.stringify({ [field]: "deepseek-v4-flash" }),
       });
       expect(invalid.status).toBe(400);
 
@@ -1374,29 +1374,29 @@ describe("provider management validation", () => {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          noStructuredOutputModels: [" deepseek-v4-flash ", "deepseek-v4-flash"],
+          [field]: [" deepseek-v4-flash ", "deepseek-v4-flash"],
         }),
       });
       expect(patchRes.status).toBe(200);
 
       const providers = await fetch(new URL("/api/providers", server.url)).then(response => response.json()) as Array<{
         name: string;
-        noStructuredOutputModels?: string[];
+        [key: string]: string[] | string | undefined;
       }>;
-      expect(providers.find(provider => provider.name === "structured-output-toggle")?.noStructuredOutputModels)
+      expect(providers.find(provider => provider.name === "structured-output-toggle")?.[field])
         .toEqual(["deepseek-v4-flash"]);
 
       const clearRes = await fetch(new URL("/api/providers?name=structured-output-toggle", server.url), {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ noStructuredOutputModels: null }),
+        body: JSON.stringify({ [field]: null }),
       });
       expect(clearRes.status).toBe(200);
 
       const saved = await fetch(new URL("/api/config", server.url)).then(response => response.json()) as {
-        providers: Record<string, { noStructuredOutputModels?: string[] }>;
+        providers: Record<string, Partial<Record<typeof field, string[]>>>;
       };
-      expect(saved.providers["structured-output-toggle"].noStructuredOutputModels).toBeUndefined();
+      expect(saved.providers["structured-output-toggle"][field]).toBeUndefined();
     } finally {
       await server.stop(true);
     }

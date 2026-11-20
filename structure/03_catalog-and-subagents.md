@@ -4,8 +4,8 @@
 
 `src/codex/catalog.ts` builds a shared Codex-shaped catalog for CLI, TUI, App, and SDK. It:
 
-- preserves native OpenAI entries from the live catalog or static fallback, and emits GPT-6 Astra
-  from the current installed Codex contract plus gpt-5.6 natives from the pinned upstream models.json snapshot
+- preserves native OpenAI entries from the live catalog or static fallback, and emits
+  gpt-5.6 natives from the pinned upstream models.json snapshot
   (`src/codex/data/upstream-models.json` — exact per-slug ladders: luna has no ultra);
 - upgrades either an observed selector-qualified `*/gpt-daybreak-blue-latest` account row or an
   explicitly configured canonical `openai/gpt-daybreak-blue-latest` Codex-forward row from the
@@ -86,9 +86,7 @@ display name use `provider/model`.
 
 ## Native passthrough
 
-Native bare OpenAI entries form one `openai` group. GPT-6 Astra is a static supported native with
-272,000 effective context, 872,000 maximum context, `low` through `ultra`, default `low`, v2
-multi-agent metadata, and no automatic compaction limit. The provider's Pool(default)/Direct option
+Native bare OpenAI entries form one `openai` group. The provider's Pool(default)/Direct option
 changes account selection without changing those ids; `openai-apikey/<model>` creates the separate
 API-key identity. The API GPT-6 Astra and GPT-5.6 rows use 1,050,000 context / 922,000 max input;
 GPT-5.6 `*-pro` virtual rows

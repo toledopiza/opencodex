@@ -7,6 +7,8 @@ import { readSessionListCache, writeSessionListCache } from "../session-list-cac
 import { useDataSurface } from "../data-surface";
 import { DataSurfaceSkeleton } from "../components/data-surface";
 import { useSubagentDelegation, type UltraModePatch, type UltraModeState } from "./use-subagent-delegation";
+import { SubagentSurfaceConfirmation } from "../components/SubagentSurfaceConfirmation";
+import { useSubagentSurfaceConfirmation, type SubagentSurfaceMode } from "../components/use-subagent-surface-confirmation";
 
 type CachedSubagents = { available: string[]; chosen: string[] };
 
@@ -28,6 +30,8 @@ export default function Subagents({ apiBase }: { apiBase: string }) {
   const [ultraMode, setUltraMode] = useState<UltraModeState>({ enabled: false, hintText: null, multiAgentV2Enabled: false });
   const [ultraSaving, setUltraSaving] = useState(false);
   const [ultraLoadFailed, setUltraLoadFailed] = useState(false);
+  const [surfaceMode, setSurfaceMode] = useState<SubagentSurfaceMode>("v1");
+  const [surfaceModeReady, setSurfaceModeReady] = useState(false);
   const ultraLoadGeneration = useRef(0);
   const currentUltraApiBase = useRef(apiBase);
   useEffect(() => {
@@ -58,6 +62,8 @@ export default function Subagents({ apiBase }: { apiBase: string }) {
       // so only an explicitly forced V2 catalog is an effective surface here.
       multiAgentV2Enabled: data.enabled === true && data.multiAgentMode === "v2",
     });
+    setSurfaceMode(data.multiAgentMode === "v1" || data.multiAgentMode === "v2" ? data.multiAgentMode : "default");
+    setSurfaceModeReady(true);
     return true;
   }, [apiBase, t]);
 
@@ -98,6 +104,25 @@ export default function Subagents({ apiBase }: { apiBase: string }) {
       setUltraSaving(false);
     }
   };
+
+  const saveSurfaceMode = async (mode: SubagentSurfaceMode) => {
+    try {
+      const res = await fetch(`${apiBase}/api/v2`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ multiAgentMode: mode }),
+      });
+      await readJsonOrThrow(res, t("sub.ultraModeSaveFail"));
+      setSurfaceMode(mode);
+      setOk(true);
+      setStatus(t("sub.ultraModeSaved"));
+    } catch (error) {
+      setOk(false);
+      setStatus(error instanceof Error && error.message ? error.message : t("sub.networkError"));
+    }
+  };
+
+  const surfaceModeConfirmation = useSubagentSurfaceConfirmation(apiBase, surfaceMode, saveSurfaceMode, surfaceModeReady);
 
   const retryUltraMode = useCallback(async () => {
     try {
@@ -200,6 +225,7 @@ export default function Subagents({ apiBase }: { apiBase: string }) {
 
   return (
     <>
+      <SubagentSurfaceConfirmation {...surfaceModeConfirmation} onContinue={surfaceModeConfirmation.acknowledge} onSwitchToV1={surfaceModeConfirmation.switchToV1} onDismiss={surfaceModeConfirmation.dismiss} />
       <div className="page-head">
         <h2>{t("nav.subagents")}</h2>
       </div>

@@ -193,6 +193,8 @@ export const CURSOR_STATIC_MODELS: readonly CursorModelInfo[] = normalizeCursorM
   { id: "claude-opus-4-7-fast", contextWindow: CONTEXT_200K },
   { id: "claude-opus-4-8", contextWindow: CONTEXT_200K, supportsReasoningEffort: true },
   { id: "claude-opus-5", contextWindow: CONTEXT_200K, supportsReasoningEffort: true },
+  { id: "claude-opus-5-5", contextWindow: CONTEXT_200K, supportsReasoningEffort: true },
+  { id: "claude-fable-5-1", contextWindow: CONTEXT_200K, supportsReasoningEffort: true },
   { id: "claude-fable-5", contextWindow: CONTEXT_200K, supportsReasoningEffort: true },
 
   { id: "composer-1", contextWindow: CONTEXT_200K },

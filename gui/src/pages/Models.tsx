@@ -57,6 +57,8 @@ import {
 import { EmptyProviderHint } from "./models-provider-hints";
 import { shadowCallModelOptions } from "./dashboard-shared";
 import { shadowSourceModelBadge, shadowSourceModelLabel } from "./shadow-call-source";
+import { SubagentSurfaceConfirmation } from "../components/SubagentSurfaceConfirmation";
+import { useSubagentSurfaceConfirmation } from "../components/use-subagent-surface-confirmation";
 
 type CachedModelsPage = {
   models: ModelRow[];
@@ -753,6 +755,13 @@ export default function Models({ apiBase }: { apiBase: string }) {
     }
   };
 
+  const surfaceModeConfirmation = useSubagentSurfaceConfirmation(
+    apiBase,
+    v2?.multiAgentMode ?? "v1",
+    setMultiAgentMode,
+    !v2Loading && v2 !== null,
+  );
+
   const putV2Threads = async (value: number) => {
     // Same guards as the flag toggle: single-flight + server-side idempotence
     // (setMaxConcurrentThreads no-ops on equal value), so a re-selected current
@@ -1212,7 +1221,7 @@ export default function Models({ apiBase }: { apiBase: string }) {
                   className={`btn btn-sm${(v2?.multiAgentMode ?? "default") === mode ? " btn-primary" : " btn-ghost"}`}
                   style={{ background: (v2?.multiAgentMode ?? "default") === mode ? undefined : "transparent", color: (v2?.multiAgentMode ?? "default") === mode ? undefined : "var(--muted)" }}
                   disabled={!v2 || v2Busy}
-                  onClick={() => void setMultiAgentMode(mode)}
+                  onClick={() => surfaceModeConfirmation.requestMode(mode)}
                 >
                   {t(`models.v2Mode_${mode}` as TKey)}
                 </button>
@@ -1360,6 +1369,7 @@ export default function Models({ apiBase }: { apiBase: string }) {
 
   const modalsBlock = (
     <>
+      <SubagentSurfaceConfirmation {...surfaceModeConfirmation} onContinue={surfaceModeConfirmation.acknowledge} onSwitchToV1={surfaceModeConfirmation.switchToV1} onDismiss={surfaceModeConfirmation.dismiss} />
       {v2HelpOpen && (
         <div className="modal-overlay" role="dialog" aria-modal="true" aria-label={t("models.v2Label")} onClick={() => setV2HelpOpen(false)} onKeyDown={e => { if (e.key === "Escape") setV2HelpOpen(false); }}>
           <div className="modal-card" onClick={e => e.stopPropagation()}>

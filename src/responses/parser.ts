@@ -320,6 +320,7 @@ export function parseRequest(body: unknown): OcxParsedRequest {
   // Tool specs surfaced by a prior tool_search (deferred tools, e.g. subagents). Codex does not
   // re-list these in `tools`, but chat models can only call listed tools — so we re-inject them.
   const loadedToolSpecs: unknown[] = [];
+  const pendingToolSearchCallIds: string[] = [];
   // Remote compaction v2: the input tail carries `{type:"compaction_trigger"}` and Codex expects a
   // synthetic `{type:"compaction"}` output item (src/responses/compaction.ts). Flagged for the server.
   let compactionRequest = false;
@@ -561,11 +562,14 @@ export function parseRequest(body: unknown): OcxParsedRequest {
         // Preserve the model's prior tool_search call as an assistant tool call so multi-turn
         // history stays complete (otherwise the model re-issues tool_search forever).
         const call = item as { id?: string; call_id?: string; arguments?: unknown };
-        const callId = call.call_id ?? call.id ?? "";
-        assistantHolderWithReasoning().content.push({
-          type: "toolCall", id: callId, name: "tool_search",
-          arguments: isObj(call.arguments) ? call.arguments : {},
-        });
+        const callId = nonEmptyString(call.call_id) ?? nonEmptyString(call.id);
+        if (callId) {
+          pendingToolSearchCallIds.push(callId);
+          assistantHolderWithReasoning().content.push({
+            type: "toolCall", id: callId, name: "tool_search",
+            arguments: isObj(call.arguments) ? call.arguments : {},
+          });
+        }
         continue;
       }
 
@@ -588,15 +592,20 @@ export function parseRequest(body: unknown): OcxParsedRequest {
           }
         }
         const failed = typeof out.status === "string" && out.status !== "completed" && out.status !== "success";
-        messages.push({
-          role: "toolResult", toolCallId: out.call_id ?? "", toolName: "tool_search",
-          content: failed && wireNames.length === 0
-            ? `Tool search failed (status: ${out.status}).`
-            : wireNames.length
-              ? `Tool search loaded these tools — they are now in your available tools. Call one by its EXACT name: ${wireNames.join(", ")}.`
-              : "Tool search returned no tools.",
-          isError: failed && wireNames.length === 0, timestamp: now,
-        });
+        const outputCallId = nonEmptyString(out.call_id) ?? pendingToolSearchCallIds.shift();
+        if (outputCallId) {
+          const pendingIndex = pendingToolSearchCallIds.indexOf(outputCallId);
+          if (pendingIndex >= 0) pendingToolSearchCallIds.splice(pendingIndex, 1);
+          messages.push({
+            role: "toolResult", toolCallId: outputCallId, toolName: "tool_search",
+            content: failed && wireNames.length === 0
+              ? `Tool search failed (status: ${out.status}).`
+              : wireNames.length
+                ? `Tool search loaded these tools — they are now in your available tools. Call one by its EXACT name: ${wireNames.join(", ")}.`
+                : "Tool search returned no tools.",
+            isError: failed && wireNames.length === 0, timestamp: now,
+          });
+        }
         continue;
       }
 

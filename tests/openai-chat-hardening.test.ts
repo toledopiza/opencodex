@@ -623,4 +623,24 @@ describe("openai-chat response_format emission", () => {
       json_schema: { name: "answer", schema: { type: "object" }, strict: true },
     });
   });
+
+  test.each(["test-model", "gateway/test-model"])("omits tools and flattens tool history for text-only %s", (modelId) => {
+    const req = createOpenAIChatAdapter(provider({ noToolModels: ["test-model"] })).buildRequest({
+      ...parsed(),
+      modelId,
+      context: {
+        messages: [
+          { role: "assistant", content: [{ type: "toolCall", id: "call-1", name: "exec_command", arguments: {} }], timestamp: 0 },
+          { role: "toolResult", toolCallId: "call-1", toolName: "exec_command", content: "done", isError: false, timestamp: 0 },
+        ],
+        tools: [{ name: "exec_command", description: "run", parameters: { type: "object" } }],
+      },
+      options: { toolChoice: "auto" },
+    });
+    const body = bodyOf(req);
+    expect(body.tools).toBeUndefined();
+    expect(body.tool_choice).toBeUndefined();
+    expect(JSON.stringify(body.messages)).not.toContain('"tool_calls"');
+    expect(body.messages).toContainEqual({ role: "user", content: "[ocx] tool result: done" });
+  });
 });

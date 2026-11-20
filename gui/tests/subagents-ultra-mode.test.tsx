@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { Window } from "happy-dom";
-import { act } from "react";
+import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import Subagents from "../src/pages/Subagents";
 import { ULTRA_MODE_PRESET } from "../src/components/subagents-workspace/SubagentDelegationSection";
 import { LanguageProvider } from "../src/i18n/provider";
+import { SubagentSurfaceConfirmation } from "../src/components/SubagentSurfaceConfirmation";
+import { useSubagentSurfaceConfirmation, type SubagentSurfaceMode } from "../src/components/use-subagent-surface-confirmation";
 
 const globals = ["document", "window", "navigator", "localStorage", "fetch", "IS_REACT_ACT_ENVIRONMENT"] as const;
 let previousGlobals: Record<(typeof globals)[number], unknown>;
@@ -85,6 +87,16 @@ async function mount(apiBase = "") {
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
 }
 
+function SurfaceHarness() {
+  const [mode, setMode] = useState<SubagentSurfaceMode>("v1");
+  const confirmation = useSubagentSurfaceConfirmation("", mode, setMode);
+  return <>
+    <button type="button" onClick={() => confirmation.requestMode("default")}>base</button>
+    <SubagentSurfaceConfirmation {...confirmation} onContinue={confirmation.acknowledge} onSwitchToV1={confirmation.switchToV1} onDismiss={confirmation.dismiss} />
+    <span data-mode={mode} />
+  </>;
+}
+
 function ultraSwitch(): HTMLButtonElement {
   const button = Array.from(container.querySelectorAll("button"))
     .find(candidate => candidate.getAttribute("aria-label") === "Ultra mode");
@@ -127,6 +139,30 @@ test("uses the complete canonical proactive delegation preset", () => {
     "Each sub-agent runs in its own context and can use all available tools; prefer spawning specialists over doing everything yourself.",
     "This mode remains active until a later multi-agent mode developer message changes it.",
   ].join(" "));
+});
+
+test("confirms base/v2 moves and records the one-time notice acknowledgement", async () => {
+  await act(async () => {
+    root = createRoot(container);
+    root.render(<LanguageProvider><SurfaceHarness /></LanguageProvider>);
+  });
+  await act(async () => { (container.querySelector("button") as HTMLButtonElement).click(); });
+  expect(requests.filter(request => request.init?.method === "PUT")).toHaveLength(0);
+  expect(container.querySelector('[role="dialog"]')?.textContent).toContain("v1 is now the default sub-agent surface");
+
+  await act(async () => {
+    const continueButton = Array.from(container.querySelectorAll("button")).find(button => button.textContent === "Continue");
+    (continueButton as HTMLButtonElement).click();
+  });
+  expect(container.querySelector('[role="dialog"]')).toBeNull();
+  expect(container.querySelector("[data-mode]")?.getAttribute("data-mode")).toBe("default");
+
+  await act(async () => { (container.querySelector("button") as HTMLButtonElement).click(); });
+  expect(container.querySelector('[role="dialog"]')).not.toBeNull();
+  expect((container.querySelector("dialog") as HTMLDialogElement).open).toBe(true);
+  await act(async () => { container.querySelector("dialog")!.dispatchEvent(new testWindow.Event("cancel", { cancelable: true }) as unknown as Event); });
+  expect(container.querySelector("dialog")).toBeNull();
+  expect(container.querySelector("[data-mode]")?.getAttribute("data-mode")).toBe("default");
 });
 
 test("a save refresh from an old API server cannot overwrite a newer server", async () => {

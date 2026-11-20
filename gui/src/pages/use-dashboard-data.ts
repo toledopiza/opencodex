@@ -50,6 +50,7 @@ import {
   visionModelOptions,
   useModalDialog,
 } from "./dashboard-shared";
+import { useSubagentSurfaceConfirmation } from "../components/use-subagent-surface-confirmation";
 
 const CONTROLS_CACHE_PREFIX = "ocx.dash.controls.v1:";
 const OVERVIEW_CACHE_PREFIX = "ocx.dash.overview.v1:";
@@ -553,6 +554,8 @@ export function useDashboardData(apiBase: string) {
     finally { setMaBusy(false); }
   };
 
+  const surfaceModeConfirmation = useSubagentSurfaceConfirmation(apiBase, maMode, switchMaMode, maModeResolved);
+
   const saveInjection = async (patch: {
     multiAgentGuidanceEnabled?: boolean;
     syncCodexSubagentDefaults?: boolean;
@@ -758,7 +761,7 @@ export function useDashboardData(apiBase: string) {
     usageLoading: usagePoll.loading && !usage30d,
     healthLoading: overviewPoll.loading && !health,
     sidecarSaving, shadowCallSaving, modelsLoading, settingsSaving, syncing,
-    maMode, maModeResolved, maBusy, setMaHelpOpen, maHelpOpen,
+    maMode, maModeResolved, maBusy, setMaHelpOpen, maHelpOpen, surfaceModeConfirmation,
     effortCapHelpOpen, setEffortCapHelpOpen, shadowCallHelpOpen, setShadowCallHelpOpen,
     injectionModel, injectionEffort, injectionEfforts, injectionAvailable, injectionSaving,
     multiAgentGuidanceEnabled, syncCodexSubagentDefaults, saveInjection,

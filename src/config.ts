@@ -708,6 +708,9 @@ const providerConfigSchema = z.object({
   noStructuredOutputModels: z.array(z.string().min(1))
     .transform(normalizeNonBlankStringArray)
     .optional(),
+  noToolModels: z.array(z.string().min(1))
+    .transform(normalizeNonBlankStringArray)
+    .optional(),
   retryOn429: retryOn429PolicySchema.optional(),
   codexAccountMode: z.enum(["pool", "direct"]).optional(),
   responsesItemIdRepair: z.object({
@@ -1251,6 +1254,7 @@ const configSchema = z.object({
   providerContextCaps: z.record(z.string(), z.number().int().positive()).optional(),
   contextCapValue: z.number().int().positive().optional(),
   multiAgentGuidanceEnabled: z.boolean().optional(),
+  multiAgentMode: z.enum(["v1", "default", "v2"]).optional(),
   // Invalid optional recovery config must not discard unrelated provider/account state.
   agentTaskRecovery: agentTaskRecoverySchema.optional().catch(undefined),
   // These selections pre-date schema validation and used to pass through as
@@ -1525,6 +1529,17 @@ const configSchema = z.object({
         code: "custom",
         path: ["providers", redactSecretString(name), "noStructuredOutputModels"],
         message: structuredOutputOptOutError,
+      });
+    }
+    const toolOptOutError = nonBlankStringArrayConfigError(
+      (provider as { noToolModels?: unknown }).noToolModels,
+      "noToolModels",
+    );
+    if (toolOptOutError) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["providers", redactSecretString(name), "noToolModels"],
+        message: toolOptOutError,
       });
     }
     if (Object.hasOwn(provider, "codexAccountMode") && provider.codexAccountMode !== undefined) {
@@ -2110,12 +2125,7 @@ export function loadConfig(): OcxConfig {
     // Schema validation failed — merge defaults into the raw object instead of
     // discarding it entirely, so pool accounts and providers survive a missing
     // field like defaultProvider.
-    const defaults = getDefaultConfig();
-    const merged = { ...defaults, ...parsed };
-    // Ensure providers from both sides survive
-    if (parsed.providers && defaults.providers) {
-      merged.providers = { ...defaults.providers, ...parsed.providers };
-    }
+    const merged = mergeConfigDefaults(parsed);
     const retryResult = configSchema.safeParse(merged);
     if (retryResult.success) {
       warnConfigRepaired(configPath, result.error);
@@ -2214,6 +2224,9 @@ function mergeConfigDefaults(parsed: unknown): unknown {
   if (raw.providers && typeof raw.providers === "object" && defaults.providers) {
     merged.providers = { ...defaults.providers, ...(raw.providers as Record<string, unknown>) };
   }
+  // An absent mode is the legacy/base setting. Do not upgrade an existing config
+  // merely because fresh installs now write an explicit v1 mode.
+  if (!Object.hasOwn(raw, "multiAgentMode")) delete merged.multiAgentMode;
   return merged;
 }
 
@@ -3245,6 +3258,7 @@ export function getDefaultConfig(): OcxConfig {
     },
     defaultProvider: "openai",
     subagentModels: [...DEFAULT_SUBAGENT_MODELS],
+    multiAgentMode: "v1",
     multiAgentGuidanceEnabled: true,
     websockets: false,
     codexAutoStart: true,

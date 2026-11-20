@@ -56,7 +56,6 @@ export {
 } from "./native-models";
 
 export const DOCUMENTED_NATIVE_OPENAI_ADDITIONS = [
-  "gpt-6-astra",
   "gpt-5.3-codex-spark",
   "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna",
 ];
@@ -103,7 +102,6 @@ export function isUnsupportedOpenAiNativeSlug(slug: string): boolean {
 export const NATIVE_GPT56_CONTEXT_WINDOW = 372_000;
 
 export const NATIVE_OPENAI_CONTEXT_OVERRIDES: Record<string, { contextWindow?: number; maxContextWindow?: number }> = {
-  "gpt-6-astra": { contextWindow: 272_000, maxContextWindow: 872_000 },
   "gpt-5.5": { contextWindow: 272_000, maxContextWindow: 272_000 },
   "gpt-5.4": { contextWindow: 1_000_000, maxContextWindow: 1_000_000 },
   "gpt-5.3-codex-spark": { contextWindow: 100_000, maxContextWindow: 100_000 },
@@ -153,7 +151,6 @@ export function nativeInputModalities(slug: string): string[] {
 }
 
 export function nativeReasoningEfforts(slug: string): string[] {
-  if (slug === "gpt-6-astra") return ["low", "medium", "high", "xhigh", "max", "ultra"];
   const upstream = PINNED_NATIVE_CAPABILITY_ENTRIES.get(slug);
   const levels = Array.isArray(upstream?.supported_reasoning_levels)
     ? upstream!.supported_reasoning_levels as Array<{ effort?: string }>
@@ -169,14 +166,12 @@ export function nativeReasoningEfforts(slug: string): string[] {
 
 /** Upstream-pinned default for a native slug, when present and non-empty. */
 export function nativeDefaultReasoningEffort(slug: string): string | undefined {
-  if (slug === "gpt-6-astra") return "low";
   const level = PINNED_NATIVE_CAPABILITY_ENTRIES.get(slug)?.default_reasoning_level;
   return typeof level === "string" && level.length > 0 ? level : undefined;
 }
 
 /** Upstream-pinned multi-agent surface for a supported native slug, when present. */
 export function nativeMultiAgentVersion(slug: string): string | undefined {
-  if (slug === "gpt-6-astra") return "v2";
   const version = PINNED_NATIVE_CAPABILITY_ENTRIES.get(slug)?.multi_agent_version;
   return typeof version === "string" && version.length > 0 ? version : undefined;
 }

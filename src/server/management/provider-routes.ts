@@ -229,6 +229,19 @@ function applyProviderPatchFields(
     }
     touched = true;
   }
+  if (Object.hasOwn(rawBody, "noToolModels")) {
+    const value = rawBody.noToolModels;
+    if (value === null) {
+      delete next.noToolModels;
+    } else {
+      const error = nonBlankStringArrayConfigError(value, "noToolModels");
+      if (error) return { error };
+      const models = normalizeNonBlankStringArray(value as string[]);
+      if (models.length > 0) next.noToolModels = models;
+      else delete next.noToolModels;
+    }
+    touched = true;
+  }
 
   // headers is the one object-valued field in the mask. PATCH semantics merge it
   // shallowly into the existing block so a single fingerprint header can be added
@@ -316,6 +329,7 @@ export async function handleProviderRoutes(ctx: ManagementContext): Promise<Resp
       contextWindow: p.contextWindow,
       modelContextWindows: p.modelContextWindows,
       noStructuredOutputModels: p.noStructuredOutputModels,
+      noToolModels: p.noToolModels,
       authMode: p.authMode,
       apiKeyTransport: p.apiKeyTransport,
       disabled: p.disabled === true,

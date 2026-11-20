@@ -6,6 +6,7 @@ import {
 } from "./dashboard-shared";
 import type { useDashboardData } from "./use-dashboard-data";
 import { shadowSourceModelLabel } from "./shadow-call-source";
+import { SubagentSurfaceConfirmation } from "../components/SubagentSurfaceConfirmation";
 
 type Dash = ReturnType<typeof useDashboardData>;
 
@@ -19,6 +20,7 @@ export function DashboardDialogs(d: Dash) {
     effortCapHelpOpen, setEffortCapHelpOpen, effortCapHelpDialogRef,
     shadowCallHelpOpen, setShadowCallHelpOpen, shadowCallHelpDialogRef,
     shadowCall,
+    surfaceModeConfirmation,
   } = d;
 
   return (
@@ -134,6 +136,8 @@ export function DashboardDialogs(d: Dash) {
           </div>
         </div>
       </dialog>
+
+      <SubagentSurfaceConfirmation {...surfaceModeConfirmation} onContinue={surfaceModeConfirmation.acknowledge} onSwitchToV1={surfaceModeConfirmation.switchToV1} onDismiss={surfaceModeConfirmation.dismiss} />
 
       <dialog
         ref={maHelpDialogRef}

@@ -233,6 +233,8 @@ export function resolveToolChoiceWireName(tools: readonly Pick<OcxTool, "namespa
 export function modelInList(list: string[] | undefined, modelId: string): boolean {
   if (!list || list.length === 0) return false;
   if (list.includes(modelId)) return true;
+  const slash = modelId.lastIndexOf("/");
+  if (slash > 0 && list.includes(modelId.slice(slash + 1))) return true;
   const colon = modelId.indexOf(":");
   return colon > 0 && list.includes(modelId.slice(0, colon));
 }
@@ -773,7 +775,8 @@ export interface OcxConfig {
   /**
    * 3-state multi-agent surface override:
    * - "v1": force ALL models to v1 surface (override upstream pins)
-   * - "default" | undefined: respect upstream model pins (sol/terra=v2, luna=v1, rest=codex flag)
+   * - "default" | undefined: respect upstream model pins (sol/terra=v2, luna=v1, rest=codex flag);
+   *   undefined remains the legacy setting for existing configs
    * - "v2": force ALL models to v2 surface (override upstream pins)
    */
   multiAgentMode?: "v1" | "default" | "v2";
@@ -1442,6 +1445,8 @@ export interface OcxProviderConfig {
    * per-model compatibility escape hatch for mixed-capability gateways.
    */
   noStructuredOutputModels?: string[];
+  /** Model ids whose gateway accepts text generation only and rejects tool definitions. */
+  noToolModels?: string[];
   /**
    * Allow multiple tool calls per completion. DEFAULT-ON for openai-chat providers (the
    * buffered stream parser assembles interleaved/fragmented multi-call turns safely);

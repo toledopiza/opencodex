@@ -416,7 +416,6 @@ describe("cap composition with downstream clamps", () => {
     expect(nativeEffortClamp("gpt-5.4", "max")).toBe("xhigh");
     expect(nativeEffortClamp("gpt-5.4", "ultra")).toBe("xhigh");
     expect(nativeEffortClamp("gpt-5.4", "medium")).toBeNull();
-    expect(nativeEffortClamp("gpt-6-astra", "max")).toBeNull();
   });
 });
 

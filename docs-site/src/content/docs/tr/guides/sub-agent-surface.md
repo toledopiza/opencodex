@@ -19,13 +19,11 @@ ajanınızın ne zaman devretmesi gerektiğine karar vermez.
 | Mod | Codex ne alır? | Kim seçmelidir? |
 | --- | --- | --- |
 | **v1** | Klasik ad alanlı `spawn_agent`, `send_input`, `resume_agent` ve `close_agent` araçları. Bir spawn doğrudan başka bir modeli seçebilir. | Farklı sağlayıcılar arasında, özellikle yerelden yönlendirilen çocuklara güvenilir delegasyona ihtiyaç duyan yeni başlayanlar. |
-| **base** (varsayılan) | Yukarı akış model sabitlemeleri: GPT-5.6 Sol/Terra v2 kullanır, Luna v1 kullanır ve sabitlenmemiş modeller Codex'in `multi_agent_v2` özellik bayrağını takip eder. | Çoğu kullanıcı. Küresel olarak birini zorlamadan her model için Codex'in hedeflenen arayüzünü takip eder. |
+| **base** | Yukarı akış model sabitlemeleri: GPT-5.6 Sol/Terra v2 kullanır, Luna v1 kullanır ve sabitlenmemiş modeller Codex'in `multi_agent_v2` özellik bayrağını takip eder. | Küresel olarak birini zorlamadan her model için Codex'in hedeflenen arayüzünü isteyen kullanıcılar. |
 | **v2** | Eşzamanlı oturumlarla düz `spawn_agent`, `send_message`, `followup_task`, `interrupt_agent` ve ajan listesi araçları. | Daha yeni eşzamanlı iş akışını isteyen ve model kalıtımını ve aşağıdaki şifrelenmiş görev sınırlamasını anlayan kullanıcılar. |
 
 :::tip[Emin değil misiniz?]
-**base** ile başlayın. Sağlayıcılar arası yetkilendirmenin öngörülebilir şekilde
-çalışması gerektiğinde **v1**'i seçin. Yalnızca her katalog girdisi genelinde
-daha yeni oturum modelini özellikle istediğinizde **v2**'ye zorlayın.
+Yeni kurulumlar **v1** ile başlar. Yukarı akış model sabitlemelerini kullanmak için **base**, tüm katalog girdilerinde yeni oturum modelini kullanmak için **v2** seçin. Sağlayıcılar arası yetkilendirme için **v1** daha öngörülebilirdir.
 :::
 
 ## Nasıl çalışır?
@@ -315,5 +313,4 @@ sabitler.
 
 Model bağlam sınırı alt ajan modundan bağımsızdır. Modeller sayfasında
 yapılandırın; yerel OpenAI modelleri gerçek bağlam pencerelerini korur.
-
 

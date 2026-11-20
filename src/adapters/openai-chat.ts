@@ -342,6 +342,7 @@ function toolResultImageChatParts(content: string | OcxContentPart[]): unknown[]
 function messagesToChatFormat(parsed: OcxParsedRequest, provider: OcxProviderConfig): unknown[] {
   const out: unknown[] = [];
   const { context, options } = parsed;
+  const noTools = modelInList(provider.noToolModels, parsed.modelId);
   const replayCacheScope = parsed._reasoningReplayScope;
 
   interface PendingToolCall { id: string; name: string }
@@ -393,7 +394,7 @@ function messagesToChatFormat(parsed: OcxParsedRequest, provider: OcxProviderCon
   };
 
   const nativeOpenAI = isNativeOpenAIChatTarget(provider);
-  const toolCatalogNudge = shouldInjectNonOpenAIToolCatalogNudge(provider)
+  const toolCatalogNudge = !noTools && shouldInjectNonOpenAIToolCatalogNudge(provider)
     ? buildNonOpenAIToolCatalogNudgeForTools(context.tools, options.toolChoice)
     : undefined;
   const developerSystemParts = nativeOpenAI
@@ -445,7 +446,7 @@ function messagesToChatFormat(parsed: OcxParsedRequest, provider: OcxProviderCon
         const aMsg = msg as OcxAssistantMessage;
         const textParts = aMsg.content.filter(p => p.type === "text") as OcxTextContent[];
         const thinkingParts = aMsg.content.filter(p => p.type === "thinking") as OcxThinkingContent[];
-        const toolCalls = aMsg.content.filter(p => p.type === "toolCall") as OcxToolCall[];
+        const toolCalls = noTools ? [] : aMsg.content.filter(p => p.type === "toolCall") as OcxToolCall[];
         const chatMsg: Record<string, unknown> = { role: "assistant" };
         if (textParts.length > 0) chatMsg.content = textParts.map(p => p.text).join("");
         let reasoningContent = thinkingParts.map(p => p.thinking).join("");
@@ -502,6 +503,10 @@ function messagesToChatFormat(parsed: OcxParsedRequest, provider: OcxProviderCon
         break;
       }
       case "toolResult": {
+        if (noTools) {
+          out.push({ role: "user", content: `[ocx] tool result: ${toolResultTextForWire(msg.content)}` });
+          break;
+        }
         let toolCallId = msg.toolCallId;
         const matchIdx = toolCallId ? pendingToolCalls.findIndex(c => c.id === toolCallId) : -1;
         if (matchIdx >= 0 && toolCallId) {
@@ -831,8 +836,9 @@ export function createOpenAIChatAdapter(provider: OcxProviderConfig): ProviderAd
       }
 
       const messages = messagesToChatFormat(parsed, provider);
-      const tools = toolsToChatFormatForProvider(parsed, provider);
-      const toolChoice = toolChoiceToChatFormat(parsed.options.toolChoice, parsed.context.tools, provider);
+      const noTools = modelInList(provider.noToolModels, parsed.modelId);
+      const tools = noTools ? undefined : toolsToChatFormatForProvider(parsed, provider);
+      const toolChoice = noTools ? undefined : toolChoiceToChatFormat(parsed.options.toolChoice, parsed.context.tools, provider);
 
       const body: Record<string, unknown> = {
         model: provider.modelSuffixBracketStrip ? stripBracketedModelSuffix(parsed.modelId) : parsed.modelId,
